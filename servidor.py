@@ -126,9 +126,15 @@ class Handler(http.server.BaseHTTPRequestHandler):
                     self._enviar_binario(body, ct)
             else:
                 self.send_error(404)
-        except Exception:
+        except Exception as ex:
             try:
-                self.send_error(502)
+                import traceback
+                detalle = ("ERROR: %s\n%s" % (ex, traceback.format_exc())).encode("utf-8")
+                self.send_response(502)
+                self.send_header("Content-Type", "text/plain; charset=utf-8")
+                self.send_header("Access-Control-Allow-Origin", "*")
+                self.end_headers()
+                self.wfile.write(detalle)
             except Exception:
                 pass
 

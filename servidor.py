@@ -17,6 +17,7 @@ import http.server
 import socketserver
 import urllib.request
 import urllib.parse
+import urllib.error
 import re
 import json
 import ssl
@@ -86,6 +87,27 @@ def resolver(tmdb, temporada, episodio):
     return master.decode("utf-8", "replace"), "https://videm.xyz" + stream
 
 
+# Agregadores candidatos, en orden de preferencia (solo se usan en /probar y
+# como respaldo si el principal falla).
+AGREGADORES = [
+    ("videm", "https://videm.xyz/embed/movie/1226863"),
+    ("vidsrc.buzz", "https://vidsrc.buzz/embed/movie/1226863"),
+    ("embed.su", "https://embed.su/embed/movie/1226863"),
+    ("vidsrc.to", "https://vidsrc.to/embed/movie/1226863"),
+    ("multiembed", "https://multiembed.mov/?video_id=1226863&tmdb=1"),
+]
+
+
+def estado(url):
+    try:
+        body, _ct = descargar(url, url)
+        return "200 (%d bytes)" % len(body)
+    except urllib.error.HTTPError as e:
+        return "HTTP %s" % e.code
+    except Exception as e:
+        return "ERROR %s" % e
+
+
 class Handler(http.server.BaseHTTPRequestHandler):
     def servidor(self):
         return "http://" + self.headers.get("Host", "127.0.0.1:" + str(PUERTO))
@@ -124,6 +146,11 @@ class Handler(http.server.BaseHTTPRequestHandler):
                     self._enviar_texto(reescribir_directo(body.decode("utf-8", "replace"), u))
                 else:
                     self._enviar_binario(body, ct)
+            elif parsed.path == "/probar":
+                res = {}
+                for nombre, u in AGREGADORES:
+                    res[nombre] = estado(u)
+                self._enviar_texto(json.dumps(res, indent=2), "application/json")
             else:
                 self.send_error(404)
         except Exception as ex:

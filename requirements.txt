@@ -1,0 +1,1 @@
+# servidor.py no usa dependencias externas (solo la librería estándar de Python).

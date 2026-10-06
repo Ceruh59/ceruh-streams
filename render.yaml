@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: ceruh-streams
+    runtime: python
+    plan: free
+    region: oregon
+    startCommand: python3 servidor.py
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.0"
